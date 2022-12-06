@@ -55,8 +55,11 @@ void loop() {
 
   if (cmMsec < 10) {
     tempo = millis();
-    
   }
+  
+  String tempo_str = String(tempo, DEC);  
+  Serial.print("Tempo: ");
+  Serial.println(tempo_str);           
   
   delay(1000);
 
@@ -65,7 +68,7 @@ void loop() {
   dtostrf(cmMsec, 4, 2, leitura);
   Serial.print("Valor leitura: ");
   Serial.println(leitura);
-  sprintf(sentenca, INSERIR_TEMPO, leitura);
+  sprintf(sentenca, INSERIR_TEMPO, tempo_str);
   
   Serial.println(sentenca);
   
