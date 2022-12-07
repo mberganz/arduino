@@ -94,6 +94,12 @@ void loop() {
     Serial.println("Saindo");
   } else if (distancia <= 10) {
     Serial.println("Dentro");
+
+    Serial.println("Atualizando vaga no banco");
+    sprintf(sentenca_open, UPDATE_OPEN);
+    Serial.println(sentenca_open);
+    cur_mem->execute(sentenca_open);
+    
     unsigned long tempo_atual = millis();
     if ((unsigned long)(tempo_atual - tempo_anterior) >= intervalo) {
       String tempo_str = String(tempo_atual, DEC);
