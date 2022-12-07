@@ -9,9 +9,11 @@
 
 Ultrasonic ultrasonic(pino_trigger, pino_echo);
 
-char sentenca[128];
+char sentenca_tempo[128];
+char sentenca_report[128];
+char sentenca_open[128];
 char leitura[8];
-char distancia[8];
+char distancia_char[8];
 
 const int tipo_vaga = 1;
 const int num_vaga = 1;
@@ -37,7 +39,7 @@ void setup() {
   Ethernet.begin(mac_addr);
   Serial.println("Conectando...");
   if (conn.connect(server_addr, 3306, user, password)) {
-    Serial.println("Conexão feita com sucesso");
+    Serial.println("Conectado!");
     
     delay(1000);
     
@@ -51,40 +53,71 @@ void setup() {
 }
 
 void loop() {
+  Serial.println("");
+  Serial.println("------------------------------------------------");
+
+  Serial.println("Alocando memória");
+  MySQL_Cursor *cur_mem = new MySQL_Cursor(&conn);
+
+  delay(1000);
+
   Serial.println("Lendo dados do sensor...");
+
+  // ------------------------------------------------ //
   
   float cmMsec;
+  int distancia;
+  String distancia_str = String(distancia_char);
   unsigned long tempo;
   long microsec = ultrasonic.timing();
   cmMsec = ultrasonic.convert(microsec, Ultrasonic::CM);
-  dtostrf(cmMsec, 4, 2, distancia);
-  Serial.print("Distancia em cm: ");
-  Serial.println(distancia);
 
-  if (distancia < "10") {
+  // ------------------------------------------------ //
+
+  dtostrf(cmMsec, 4, 2, distancia_char);
+  Serial.print("Distancia: ");
+  Serial.print(distancia_char);
+  Serial.println("cm");
+
+  delay(1000);
+
+  // ------------------------------------------------ //
+
+  distancia = distancia_str.toInt();
+  Serial.println(distancia);
+  if (distancia < 10) {
     tempo = millis();
+    String tempo_str = String(tempo, DEC);  
+    Serial.print("Tempo: ");
+    Serial.println(tempo_str);
+
+    // ------------------------------------------------ //
+
+    Serial.println("Executando sentença tempo");
+    sprintf(sentenca_tempo, INSERIR_TEMPO, tempo_str);
+    Serial.println(sentenca_tempo);
+    cur_mem->execute(sentenca_tempo);
   }
-  
-  String tempo_str = String(tempo, DEC);  
-  Serial.print("Tempo: ");
-  Serial.println(tempo_str);           
   
   delay(1000);
 
-  Serial.println("Executando sentença");
-  
-  dtostrf(cmMsec, 4, 2, leitura);
-  Serial.print("Valor leitura: ");
-  Serial.println(leitura);
-  sprintf(sentenca, INSERIR_TEMPO, tempo_str);
-  
-  Serial.println(sentenca);
-  
-  MySQL_Cursor *cur_mem = new MySQL_Cursor(&conn);
-  cur_mem->execute(sentenca);
-  delete cur_mem;
-  
-  delay(2000);
+  // ------------------------------------------------ //
 
-  Serial.println("Sentença executada");
+  Serial.println("Executando sentença report");
+  sprintf(sentenca_report, INSERIR_REPORT, "report");
+  Serial.println(sentenca_report);
+  cur_mem->execute(sentenca_report);
+
+  delay(1000);
+
+  // ------------------------------------------------ //
+
+  Serial.println("Liberando memória...");
+  delete cur_mem;
+  Serial.println("Memória liberada");
+
+  delay(1000);
+
+  Serial.println("------------------------------------------------");
+  Serial.println("");
 }
