@@ -11,14 +11,21 @@ Ultrasonic ultrasonic(pino_trigger, pino_echo);
 
 char sentenca[128];
 char leitura[8];
+char distancia[8];
 
-byte mac_addr[] = { 0xF4, 0x6B, 0x8C, 0x68, 0xC0, 0xF3 };
+const int tipo_vaga = 1;
+const int num_vaga = 1;
 
-IPAddress server_addr(10,10,204,22);
+byte mac_addr[] = { 0xF4, 0x6B, 0x8C, 0x68, 0xB5, 0xF9 };
+
+IPAddress server_addr(10,10,204,24);
 char user[] = "arduino";
 char password[] = "arduino";
 
-char INSERIR_TEMPO[] = "INSERT INTO arduino (testee) VALUES (%s)";
+char INSERIR_TEMPO[] = "INSERT INTO report (duration) VALUES (%s)";
+char INSERIR_REPORT[] = "INSERT INTO report (open) VALUES 1";
+char UPDATE_OPEN[] = "UPDATE park SET open = 1 WHERE park_id = 'num_vaga'";
+char UPDATE_CLOSE[] = "UPDATE park SET open = 0 WHERE park_id != 'num_vaga'";
 char BANCODEDADOS[] = "USE arduino";
 
 EthernetClient client;
@@ -50,10 +57,11 @@ void loop() {
   unsigned long tempo;
   long microsec = ultrasonic.timing();
   cmMsec = ultrasonic.convert(microsec, Ultrasonic::CM);
+  dtostrf(cmMsec, 4, 2, distancia);
   Serial.print("Distancia em cm: ");
-  Serial.println(cmMsec);
+  Serial.println(distancia);
 
-  if (cmMsec < 10) {
+  if (distancia < "10") {
     tempo = millis();
   }
   
