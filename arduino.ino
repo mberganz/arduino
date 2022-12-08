@@ -11,12 +11,14 @@ Ultrasonic ultrasonic(pino_trigger, pino_echo);
 
 char sentenca_tempo[128];
 char sentenca_report[128];
+char sentenca_update_report[128];
 char sentenca_open[128];
 char sentenca_close[128];
 char leitura[8];
 char distancia_char[8];
-const int intervalo = 100000;
+const int intervalo = 10000;
 unsigned long tempo_anterior = 0;
+bool open = false;
 
 const int tipo_vaga = 1;
 const int num_vaga = 1;
@@ -29,6 +31,7 @@ char password[] = "arduino";
 
 char INSERIR_TEMPO[] = "INSERT INTO report (duration) VALUES (%s)";
 char INSERIR_REPORT[] = "INSERT INTO report (open) VALUES 1";
+char UPDATE_REPORT[] = "UPDATE report SET open = 0";
 char UPDATE_OPEN[] = "UPDATE park SET open = 1 WHERE park_id = 'num_vaga'";
 char UPDATE_CLOSE[] = "UPDATE park SET open = 0 WHERE park_id != 'num_vaga'";
 char BANCODEDADOS[] = "USE arduino";
@@ -89,16 +92,26 @@ void loop() {
 
   // ------- Verifica se o carro está dentro da vaga -------- //
 
-  if (distancia <= 11 && distancia > 10) {
+  if (distancia > 11) {
+    Serial.println("Vaga livre");
+    sprintf(sentenca_close, UPDATE_CLOSE);  // Marca vaga como livre
+    Serial.println(sentenca_close);
+    cur_mem->execute(sentenca_close);
+
+    delay(1000);
+  } else if (distancia <= 11 && distancia > 10) {
     Serial.println("Entrando");
+    delay(1000);
   } else if (distancia <= 10) {
     Serial.println("Dentro");
 
     Serial.println("Atualizando vaga no banco");
-    sprintf(sentenca_open, UPDATE_OPEN); // Marca vaga como ocupada
+    sprintf(sentenca_open, UPDATE_OPEN);  // Marca vaga como ocupada
     Serial.println(sentenca_open);
     cur_mem->execute(sentenca_open);
-    
+
+    delay(1000);
+
     unsigned long tempo_atual = millis();
     if ((unsigned long)(tempo_atual - tempo_anterior) >= intervalo) {
       String tempo_str = String(tempo_atual, DEC);
@@ -118,19 +131,27 @@ void loop() {
     }
   }
 
-  Serial.println("Atualizando vaga no banco");
-  sprintf(sentenca_close, UPDATE_CLOSE); // Marca vaga como livre
-  Serial.println(sentenca_close);
-  cur_mem->execute(sentenca_close);
-
   delay(1000);
 
-  // ------------------------------------------------ //
+  // --------------- Reportar para o sistema --------------- //
 
-  Serial.println("Executando sentença report");
-  sprintf(sentenca_report, INSERIR_REPORT, "report");
-  Serial.println(sentenca_report);
-  cur_mem->execute(sentenca_report);
+  if (distancia < 10) {
+    open = true;
+  } else if (distancia > 11) {
+    open = false;
+  }
+
+  if (open == true) {
+    Serial.println("Executando sentença report");
+    sprintf(sentenca_report, INSERIR_REPORT, "report");  // Marca vaga como ocupada
+    Serial.println(sentenca_report);
+    cur_mem->execute(sentenca_report);
+  } else if (open == false) {
+    Serial.println("Atualizando report");
+    sprintf(sentenca_update_report, UPDATE_REPORT);  // Marca vaga como livre
+    Serial.println(sentenca_update_report);
+    cur_mem->execute(sentenca_update_report);
+  }
 
   delay(1000);
 
