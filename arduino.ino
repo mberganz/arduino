@@ -12,9 +12,10 @@ Ultrasonic ultrasonic(pino_trigger, pino_echo);
 char sentenca_tempo[128];
 char sentenca_report[128];
 char sentenca_open[128];
+char sentenca_close[128];
 char leitura[8];
 char distancia_char[8];
-const int intervalo = 1000;
+const int intervalo = 100000;
 unsigned long tempo_anterior = 0;
 
 const int tipo_vaga = 1;
@@ -73,7 +74,7 @@ void loop() {
   long microsec = ultrasonic.timing();
   cmMsec = ultrasonic.convert(microsec, Ultrasonic::CM);
 
-  // ------------------------------------------------ //
+  // ------------------- Checa a distancia ------------------- //
 
   dtostrf(cmMsec, 4, 2, distancia_char);
   Serial.print("Distancia: ");
@@ -86,17 +87,15 @@ void loop() {
 
   delay(1000);
 
-  // ------------------------------------------------ //
+  // ------- Verifica se o carro está dentro da vaga -------- //
 
   if (distancia <= 11 && distancia > 10) {
     Serial.println("Entrando");
-  } else if (distancia > 10 && distancia < 11) {
-    Serial.println("Saindo");
   } else if (distancia <= 10) {
     Serial.println("Dentro");
 
     Serial.println("Atualizando vaga no banco");
-    sprintf(sentenca_open, UPDATE_OPEN);
+    sprintf(sentenca_open, UPDATE_OPEN); // Marca vaga como ocupada
     Serial.println(sentenca_open);
     cur_mem->execute(sentenca_open);
     
@@ -106,18 +105,23 @@ void loop() {
       Serial.print("Tempo: ");
       Serial.println(tempo_str);
 
-      // ------------------------------------------------ //
+      // ---------- Salva o tempo de vaga no banco ---------- //
 
       Serial.println("Executando sentença tempo");
       sprintf(sentenca_tempo, INSERIR_TEMPO, tempo_str);
       Serial.println(sentenca_tempo);
       cur_mem->execute(sentenca_tempo);
 
-      // ------------------------------------------------ //
+      // ----------------- Reinicia o timer ----------------- //
 
       tempo_anterior = tempo_atual;
     }
   }
+
+  Serial.println("Atualizando vaga no banco");
+  sprintf(sentenca_close, UPDATE_CLOSE); // Marca vaga como livre
+  Serial.println(sentenca_close);
+  cur_mem->execute(sentenca_close);
 
   delay(1000);
 
